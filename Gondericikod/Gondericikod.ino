@@ -1,6 +1,8 @@
+// Libraries for LoRa 
 #include <SPI.h>
 #include <LoRa.h>
 
+// Libraries for DHT 11
 #include <DHT.h>
 #include <DHT_U.h>
 
@@ -8,20 +10,26 @@
 #define NSS 5     // CS pin
 #define RESET 14  // Reset pin
 #define DIO0 2    // DIO0 pin
+#define SCK 18
+#define MISO 19
+#define MOSI 23
+#define DIO0 2
 
 //DHT SENSOR
 #define DHTPIN 35
 #define DHTTYPE DHT11
+
+//868E6 for Europe
+#define BAND 868E6
 //GLOBAL VARIABLES
 float temperature=0;
 float humidity = 0;
 
+//initilize packet counter
+int readingID = 0;
+String LoRaMessage = "";
 
 uint32_t delayMS=2000;
-
-//INITIALIZE PACKET COUNTER
-int readingID = 0;
-String LoraMessage = "";
 
 //define DHT instance
 DHT_Unified dht(DHTPIN, DHTTYPE);
@@ -63,12 +71,23 @@ void getDHTreadings(){
   }
 
 }
-void getReadings()
-{
-  getDHTreadings();
-  delay(5000);
-}
 
+//----------------------Initialize LoRa Module-----------------------------------------//
+void initLoRa()
+{
+  Serial.println("LoRa Sender Test");
+  //SPI LoRa pins
+  SPI.begin(SCK, MISO, MOSI, NSS);
+  //setup LoRa transceiver module
+  LoRa.setPins(NSS, RESET, DIO0);
+  
+  if (!LoRa.begin(BAND)) {
+    Serial.println("LoRa başlatılırken bir hata oluştu!");
+    while (1);
+  }
+  Serial.println("LoRa Initializing OK!");
+  delay(2000);
+}
 
 //------------------Send data to receiver node using LoRa-------------------------//
 void sendReadings() {
@@ -78,32 +97,23 @@ void sendReadings() {
   LoRa.print(LoRaMessage);
   LoRa.endPacket();
 
-  Serial.println("Paket gönderildi!");
-  displayReadings();
+  Serial.println("Packet Sent!");
 
   delay(10000);
+}
+void getReadings()
+{
+  getDHTreadings();
+  delay(5000);
 }
 
 void setup() {
   Serial.begin(115200);
-  while (!Serial);
-
-  // LoRa modülü başlatma
-  Serial.println("LoRa Gönderici Başlatılıyor...");
-  LoRa.setPins(NSS, RESET, DIO0);
-
-  if (!LoRa.begin(868E6)) { // Frekans 868 MHz (Avrupa için)
-    Serial.println("LoRa başlatılamadı!");
-    while (1);
-  }
-
-  Serial.println("LoRa başlatıldı!");
-
+  initLoRa();
   initDHT();
 }
 
 void loop() {
-
-  delay(2000); // Her 2 saniyede bir mesaj gönder
+  sendReadings();
 }
 

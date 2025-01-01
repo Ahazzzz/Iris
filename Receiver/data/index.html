@@ -1,0 +1,102 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="data:,">
+  <title>ESP32 [LoRa + Sensor Data]</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" crossorigin="anonymous">
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      text-align: center;
+      background-color: #f4f4f4;
+      color: #333;
+    }
+    header {
+      padding: 20px;
+      background-color: #333;
+      color: white;
+    }
+    header h2 {
+      font-size: 2rem;
+    }
+    main {
+      padding: 20px;
+    }
+    .readings {
+      font-size: 1.5rem;
+      margin: 10px 0;
+    }
+    .chart-container {
+      width: 90%;
+      margin: 20px auto;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h2>ESP32 [LoRa + Sensor Data]</h2>
+    <p>
+      <i class="fas fa-thermometer-half" style="color:#FF0000;"></i> Sicaklik: 
+      <span id="latestTemperature" class="readings">--</span>
+      <sup>&deg;C</sup>
+    </p>
+    <p>
+      <i class="fas fa-tint" style="color:#008000;"></i> Nem: 
+      <span id="latestHumidity" class="readings">--</span>
+      <sup>&#37;</sup>
+    </p>
+  </header>
+  <main>
+    <section class="chart-container">
+      <h3>Sicaklik Grafik</h3>
+      <canvas id="temperatureChart"></canvas>
+    </section>
+    <section class="chart-container">
+      <h3>Nem Grafik</h3>
+      <canvas id="humidityChart"></canvas>
+    </section>
+  </main>
+<script>
+  
+  async function fetchSensorData() {
+  try {
+    const temperatureResponse = await fetch('http://192.168.1.107:8080/temperature');
+    const humidityResponse = await fetch('http://192.168.1.107:8080/humidity');
+    const temperature = await temperatureResponse.text();
+    const humidity = await humidityResponse.text();
+
+    console.log('Temperature:', temperature); // Veriyi kontrol etmek için
+    console.log('Humidity:', humidity); // Veriyi kontrol etmek için
+
+    const temperatureValue = parseFloat(temperature);
+    const humidityValue = parseFloat(humidity);
+
+    if (isNaN(temperatureValue) || isNaN(humidityValue)) {
+      console.error('Invalid data received');
+      return;
+    }
+
+    // Güncel veriyi HTML elementlerine yaz
+    document.getElementById('latestTemperature').innerText = temperature;
+    document.getElementById('latestHumidity').innerText = humidity;
+
+    console.log('Data updated successfully'); // Güncelleme işleminin başarılı olduğunu kontrol et
+
+  } catch (error) {
+    console.error('Error fetching sensor data:', error);
+  }
+}
+
+window.onload = function() {
+  setInterval(fetchSensorData, 10000);
+  fetchSensorData(); 
+}
+
+
+</script>
+</body>
+</html>
